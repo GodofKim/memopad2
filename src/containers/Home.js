@@ -60,7 +60,7 @@ class Home extends React.Component {
 
 const mapStateToProps = (state) =>{
   return {
-    isLoggedIn: state.authentification.status.isLoggedIn,
+    isLoggedIn: state.authentication.status.isLoggedIn,
     postStatus: state.memo.post
   };
 };
