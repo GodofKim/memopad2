@@ -12,6 +12,7 @@ import {
     AUTH_GET_STATUS_FAILURE,
     AUTH_LOGOUT
 } from './ActionTypes';
+export const API_URL = "http://localhost:4000";
 
 /*============================================================================
     authentication
@@ -24,7 +25,7 @@ export function loginRequest(username, password) {
     dispatch(login());
 
     //API REQUEST
-    return axios.post('/api/account/signin', { username, password })
+    return axios.post(API_URL + '/api/account/signin', { username, password })
     .then((response) => {
       //SUCCESS
       dispatch(loginSuccess(username));
@@ -61,7 +62,7 @@ export function registerRequest(username, password) {
       // Inform Register API is starting
       dispatch(register());
 
-      return axios.post('/api/account/signup', { username, password })
+      return axios.post(API_URL + '/api/account/signup', { username, password })
       .then((response) => {
           dispatch(registerSuccess());
       }).catch((error) => {
@@ -95,7 +96,7 @@ export function getStatusRequest() {
         // inform Get Status API is starting
         dispatch(getStatus());
 
-        return axios.get('/api/account/getInfo')
+        return axios.get(API_URL + '/api/account/getInfo')
         .then((response) => {
           dispatch(getStatusSuccess(response.data.info.username));
         })
@@ -127,7 +128,7 @@ export function getStatusFailure() {
 /* Logout */
 export function logoutRequest() {
     return (dispatch) => {
-        return axios.post('/api/account/logout')
+        return axios.post(API_URL + '/api/account/logout')
         .then((response) => {
             dispatch(logout());
         });

@@ -1,14 +1,57 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Write } from 'components';
-import { memoPostRequest } from 'actions/memo';
+import { Write, MemoList } from 'components';
+import { memoPostRequest, memoListRequest } from 'actions/memo';
 
 class Home extends React.Component {
+
+
 
   constructor(props){
     super(props);
 
     this.handlePost = this.handlePost.bind(this);
+    this.loadNewMemo = this.loadNewMemo.bind(this);
+  }
+
+  componentDidMount() {
+    // LOAD NEW MEMO EVERY 5 SECONDS
+    const loadMemoLoop = () => {
+      this.loadNewMemo().then(
+        () => {
+          this.memoLoaderTimeoutId = setTimeout(loadMemoLoop, 5000);
+          // this 객체에 이 프로퍼티가 없으면 자동으로 만듦. JS 특성.
+        }
+      );
+    };
+
+    this.props.memoListRequest(true).then(
+      () => {
+        // BEGIN NEW MEMO LOADING LOOP
+        loadMemoLoop();
+      }
+    );
+  }
+
+  componentWillUnmount() {
+    // STOPS THE loadMemoLoop
+    clearTimeout(this.memoLoaderTimeoutId);
+  }
+
+  loadNewMemo() {
+    // CANCEL IF THERE IS A PENDING REQUEST
+    if(this.props.listStatus === 'WAITING')
+      return new Promise((resolve, reject) => {
+        resolve();
+      }); // 무슨 뜻이야 이건. 빈 프라미스 => 함수를 끝내는 return이랑 같은 의미인데
+    //대신 호출자가 .then을 사용하기 위해 프라미스를 리턴한다.
+
+    // IF PAGE IS EMPTY, DO THE INITIAL LOADING
+    if(this.props.memoData.length === 0){
+      return this.props.memoListRequest(true);
+    }
+
+    return this.props.memoListRequest(false, 'new', this.props.memoData[0]._id);
   }
 
   /* POST MEMO */
@@ -17,8 +60,12 @@ class Home extends React.Component {
       () => {
         if(this.props.postStatus.status === "SUCCESS") {
           //TRIGGER LOAD NEW MEMO
-          //TO BE IMPLEMENTED
-          Materialize.toast('Success!', 2000);
+          this.loadNewMemo().then(
+            () => {
+              Materialize.toast('Success!', 2000);
+            }
+          );
+
         } else {
           /*
             ERROR CODES
@@ -50,9 +97,11 @@ class Home extends React.Component {
 
   render() {
     const write = ( <Write onPost={this.handlePost}/> );
+
     return (
       <div className="wrapper">
         { this.props.isLoggedIn ? write : undefined }
+        <MemoList data={this.props.memoData} currentUser={this.props.currentUser}/>
       </div>
     );
   }
@@ -61,7 +110,10 @@ class Home extends React.Component {
 const mapStateToProps = (state) =>{
   return {
     isLoggedIn: state.authentication.status.isLoggedIn,
-    postStatus: state.memo.post
+    postStatus: state.memo.post,
+    currentUser: state.authentication.status.currentUser,
+    memoData: state.memo.list.data,
+    listStatus: state.memo.list.status
   };
 };
 
@@ -69,6 +121,9 @@ const mapDispatchToProps = (dispatch)  => {
   return {
     memoPostRequest: (contents) => {
       return dispatch(memoPostRequest(contents));
+    },
+    memoListRequest: (isInitial, listType, id, username) => {
+      return dispatch(memoListRequest(isInitial, listType, id, username));
     }
   };
 };
