@@ -11,7 +11,13 @@ class Home extends React.Component {
     super(props);
 
     this.handlePost = this.handlePost.bind(this);
+
     this.loadNewMemo = this.loadNewMemo.bind(this);
+    this.loadOldMemo = this.loadOldMemo.bind(this);
+
+    this.state = {
+      loadingState: false
+    };
   }
 
   componentDidMount() {
@@ -25,17 +31,54 @@ class Home extends React.Component {
       );
     };
 
+    const loadUntilScrollable = () => {
+      // iF THE SCROLLBAR DOES NOT EXIST,
+      if($("body").height() < $(window).height()){
+        this.loadOldMemo().then(
+          () => {
+            // DO THIS RECURSIVELY UNLESS IT'S THE LAST PAGE
+            if(!this.props.isLast){
+              loadUntilScrollable();
+            }
+          }
+        );
+      }
+    };
+
     this.props.memoListRequest(true).then(
       () => {
         // BEGIN NEW MEMO LOADING LOOP
+        loadUntilScrollable();
         loadMemoLoop();
       }
     );
+
+    $(window).scroll(() => {
+      // WHEN HEIGHT UNDER SCROLLBOTTOM IS LESS THEN 250
+      if ($(document).height() - $(window).height() - $(window).scrollTop() < 250) {
+        if(!this.state.loadingState){
+          this.loadOldMemo();
+          this.setState({
+            loadingState: true
+          });
+        }
+      }
+      else {
+        if(this.state.loadingState){
+          this.setState({
+            loadingState: false
+          });
+        }
+      }
+    });
   }
 
   componentWillUnmount() {
     // STOPS THE loadMemoLoop
     clearTimeout(this.memoLoaderTimeoutId);
+
+    // REMOVE WINDOWS SCROLL LISTENER
+    $(window).unbind();
   }
 
   loadNewMemo() {
@@ -52,6 +95,28 @@ class Home extends React.Component {
     }
 
     return this.props.memoListRequest(false, 'new', this.props.memoData[0]._id);
+  }
+
+  loadOldMemo() {
+    // CANCEL IF USER IS READING THE LAST PAGE
+    if(this.props.isLast){
+      return new Promise(
+        (resolve, reject) => {
+          resolve();
+        }
+      );
+    }
+
+    // GET ID OF THE MEMO AT THE BOTTM
+    let lastId = this.props.memoData[this.props.memoData.length-1]._id;
+
+    // START REQUEST
+    return this.props.memoListRequest(false, 'old', lastId).then(() => {
+      // IF IT IS LAST PAGE, NOTIFY
+      if(this.props.isLast){
+        Materialize.toast('You are reading the last page', 2000);
+      }
+    });
   }
 
   /* POST MEMO */
@@ -113,7 +178,8 @@ const mapStateToProps = (state) =>{
     postStatus: state.memo.post,
     currentUser: state.authentication.status.currentUser,
     memoData: state.memo.list.data,
-    listStatus: state.memo.list.status
+    listStatus: state.memo.list.status,
+    isLast: state.memo.list.isLast
   };
 };
 
