@@ -13,6 +13,7 @@ class Memo extends React.Component {
     this.toggleEdit = this.toggleEdit.bind(this);
     this.handleChange = this.handleChange.bind(this);
     this.handleRemove = this.handleRemove.bind(this);
+    this.handleStar = this.handleStar.bind(this);
   }
 
   toggleEdit() {
@@ -45,6 +46,12 @@ class Memo extends React.Component {
     });
   }
 
+  handleStar() {
+    let id = this.props.data._id;
+    let index = this.props.index;
+    this.props.onStar(id,index);
+  }
+
   render() {
     const { data, ownership } = this.props;
 
@@ -64,6 +71,10 @@ class Memo extends React.Component {
       <span style={{color: '$AAB5BC'}}> · Edited <TimeAgo date={this.props.data.date.edited} live={true}/></span>
     );
 
+    // IF IT IS STARRED ( CHECKS WHETHER THE NICKNAME EXISTS IN THE ARRAY )
+    // RETURN STYLE THAT HAS A YELLOW COLOR
+    let starStyle = (this.props.data.starred.indexOf(this.props.currentUser) > -1) ? { color: '#ff9980' } : {} ;
+
     const memoView = (
       <div className="card">
         <div className="info">
@@ -75,7 +86,8 @@ class Memo extends React.Component {
           { data.contents }
         </div>
         <div className="footer">
-          <i className="material-icons log-footer-icon star icon-button">star</i>
+          <i className="material-icons log-footer-icon star icon-button"
+            style={starStyle} onClick={this.handleStar}>star</i>
           <span className="star-count">{data.starred.length}</span>
         </div>
       </div>
@@ -127,7 +139,10 @@ Memo.propTypes = {
   ownership: React.PropTypes.bool,
   onEdit: React.PropTypes.func,
   index: React.PropTypes.number,
-  onRemove: React.PropTypes.func
+  onRemove: React.PropTypes.func,
+  onStar: React.PropTypes.func,
+  starStatus: React.PropTypes.object,
+  currentUser: React.PropTypes.string
 };
 
 Memo.defaultProps = {
@@ -149,7 +164,12 @@ Memo.defaultProps = {
   index: -1,
   onRemove: (id, index) => {
     console.error('remove function not defined');
-  }
+  },
+  onStar: (id, index) => {
+    console.error('star function not defined');
+  },
+  starStatus: {}, // 이건 왜 필요한데
+  currentUser: ''
 };
 
 export default Memo;
