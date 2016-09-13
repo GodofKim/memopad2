@@ -132,6 +132,20 @@ class Memo extends React.Component {
       belowOrigin: true // Displays dropdown below the button
     });
   }
+
+  shouldComponentUpdate(nextProps, nextState) {
+    let current = {
+      props: this.props,
+      state: this.state
+    };
+
+    let next = {
+      props: nextProps,
+      state: nextState
+    };
+
+    return (JSON.stringify(current) !== JSON.stringify(next));
+  }
 }
 
 Memo.propTypes = {
